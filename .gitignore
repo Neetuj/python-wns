@@ -1,0 +1,7 @@
+.tox/
+dist/
+build/
+*.egg-info
+*.py[co]
+*.orig
+.DS_Store
