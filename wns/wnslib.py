@@ -78,6 +78,9 @@ class WNSClient():
         elif wnstype == 'badge':
             wnsparams.setdefault('badge', {'value': None})
             wns = WNSBadge(accesstoken=accesstoken)
+        elif wnstype == 'raw':
+            wnsparams.setdefault('template', 'ToastText01')
+            wns  = WNSRaw(accesstoken=accesstoken)
         else:
             raise WNSInvalidPushTypeException(wnstype)
         result = wns.send(url, wnsparams)
@@ -187,6 +190,98 @@ class WNSBase(object):
         response = requests.post(uri, headers=self.headers, data=data)
         return response
 
+class WNSBaseRaw(object):
+
+    HEADER_WNS_TYPE = 'X-WNS-Type'
+    HEADER_CONTENT_TYPE = 'Content-Type'
+    HEADER_WNS_REQUESTFORSTATUS = 'X-WNS-RequestForStatus'
+    HEADER_X_NOTIFICATION = "X-NotificationClass"
+    def __init__(self, accesstoken=None):
+        self.accesstoken = accesstoken
+        self.headers = {
+            'Content-Type': 'text/xml',
+            'Content-Length': len(self.accesstoken),
+            'Authorization': 'Bearer %s' % self.accesstoken,
+        }
+
+    def set_type(self, target):
+        self.headers[self.HEADER_WNS_TYPE] = "wns/raw"
+        self.headers[self.HEADER_CONTENT_TYPE] = "application/octet-stream"
+        self.headers[self.HEADER_WNS_REQUESTFORSTATUS] = "true"
+        self.headers[self.HEADER_X_NOTIFICATION] = "3"
+
+    def serialize_tree(self, tree):
+        file = StringIO()
+        tree.write(file, encoding='utf-8')
+        contents = "<?xml version='1.0' encoding='utf-8'?>" + file.getvalue()
+        file.close()
+        return contents
+
+    def optional_attribute(self, element, attribute, payload_param, payload):
+        if payload_param in payload:
+            element.attrib['attribute'] = payload[payload_param]
+
+    def optional_subelement(self, parent, element, payload_param, payload):
+        if payload_param in payload:
+            el = ET.SubElement(parent, element)
+            el.text = payload[payload_param]
+            return el
+
+    def prepare_payload(self, payload):
+        raise NotImplementedError('Subclasses should override prepare_payload method')
+
+    def parse_response(self, response):
+        status = {
+            'deviceconnectionstatus': response.headers.get('X-WNS-DeviceConnectionStatus', ''),
+            'error_description': response.headers.get('X-WNS-Error-Description', ''),
+            'msgid': response.headers.get('X-WNS-Msg-ID', ''),
+            'status': response.headers.get('X-WNS-Status', '')
+        }
+
+        code = response.code
+        status['http_status_code'] = code
+
+        if code == 200:
+            if status['status'] == 'dropped':
+                status['error'] = 'dropped'
+                status['backoff_seconds'] = 60
+        elif code == 400:
+            status['error'] = 'Bad Request - invalid payload or subscription URI'
+        elif code == 401:
+            status['error'] = 'Unauthorized - invalid token or subscription URI'
+            status['drop_subscription'] = True
+        elif code == 403:
+            status['error'] = 'The cloud service is not authorized to send a ' \
+                              'notification to this URI even though they are authenticated.'
+        elif code == 404:
+            status['error'] = 'The channel URI is not valid or is not recognized by WNS.'
+            status['drop_subscription'] = True
+        elif code == 405:
+            status['error'] = 'Invalid Method'
+        elif code == 503:
+            status['error'] = 'Service Unavailable - try again later'
+            status['backoff_seconds'] = 60
+        else:
+            status['error'] = 'Unexpected status'
+
+        return status
+
+    def handle_response(self, response):
+        result = self.parse_response(response)
+        result['response'] = {'status': response.code, 'headers': dict(response.headers), 'text': response.body}
+
+    def send(self, uri, payload):
+        """
+        Send push message. Input parameters:
+
+        uri - channel uri
+        payload - message payload (see help for subclasses)
+        accesstoken - token
+
+        """
+        data = self.prepare_payload(payload)
+        response = requests.post(uri, headers=self.headers, data=data)
+        return response
 
 class WNSToast(WNSBase):
 
@@ -216,6 +311,33 @@ class WNSToast(WNSBase):
                 count += 1
         return self.serialize_tree(ET.ElementTree(root))
 
+class WNSRaw(WNSBaseRaw):
+
+    def __init__(self, *args, **kwargs):
+        super(WNSRaw, self).__init__(*args, **kwargs)
+        self.set_type('raw')
+
+    def prepare_payload(self, payload):
+        root = ET.Element("toast")
+        visual = ET.SubElement(root, 'visual')
+        binding = ET.SubElement(visual, 'binding')
+        if 'template' in payload:
+            binding.attrib['template'] = payload['template']
+        if 'text' in payload:
+            count = 1
+            for t in payload['text']:
+                el = ET.SubElement(binding, 'text')
+                el.text = t
+                el.attrib['id'] = '%d' % count
+                count += 1
+        if 'image' in payload:
+            count = 1
+            for image in payload['image']:
+                el = ET.SubElement(binding, 'img')
+                el.attrib['id'] = '%d' % count
+                el.attrib['src'] = '%s' % image
+                count += 1
+        return self.serialize_tree(ET.ElementTree(root))
 
 class WNSTile(WNSBase):
     def __init__(self, *args, **kwargs):
