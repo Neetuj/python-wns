@@ -79,7 +79,7 @@ class WNSClient():
             wnsparams.setdefault('badge', {'value': None})
             wns = WNSBadge(accesstoken=accesstoken)
         elif wnstype == 'raw':
-            wnsparams.setdefault('template', 'ToastText01')
+            wnsparams.setdefault('raw', 'raw notification')
             wns  = WNSRaw(accesstoken=accesstoken)
         else:
             raise WNSInvalidPushTypeException(wnstype)
@@ -318,26 +318,7 @@ class WNSRaw(WNSBaseRaw):
         self.set_type('raw')
 
     def prepare_payload(self, payload):
-        root = ET.Element("toast")
-        visual = ET.SubElement(root, 'visual')
-        binding = ET.SubElement(visual, 'binding')
-        if 'template' in payload:
-            binding.attrib['template'] = payload['template']
-        if 'text' in payload:
-            count = 1
-            for t in payload['text']:
-                el = ET.SubElement(binding, 'text')
-                el.text = t
-                el.attrib['id'] = '%d' % count
-                count += 1
-        if 'image' in payload:
-            count = 1
-            for image in payload['image']:
-                el = ET.SubElement(binding, 'img')
-                el.attrib['id'] = '%d' % count
-                el.attrib['src'] = '%s' % image
-                count += 1
-        return self.serialize_tree(ET.ElementTree(root))
+        return payload['raw']
 
 class WNSTile(WNSBase):
     def __init__(self, *args, **kwargs):
