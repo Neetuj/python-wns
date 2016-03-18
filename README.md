@@ -1,9 +1,12 @@
 # python-wns
 Python module for Windows Notification Service (WNS) for Windows tablets/phones(8+)
 
+INSTALL:- 
+
+pip install python-wns
 
 
-example:- 
+Example:- 
 
 //Send toast notification
 
