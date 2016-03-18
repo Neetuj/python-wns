@@ -6,7 +6,7 @@ setup(
     description='wns python library',
     long_description=open('README.md', 'r').read(),
     classifiers=[
-        'Development Status :: 1 - Beta',
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 2.7',
     ],
     author='Neetu Jain',
