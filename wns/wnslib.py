@@ -165,6 +165,16 @@ class WNSBase(object):
             status['drop_subscription'] = True
         elif code == 405:
             status['error'] = 'Invalid Method'
+        elif code == 406:
+            status['error'] = 'Throttle limit exceeded'
+        elif code == 410:
+            status['error'] = 'Channel expired'
+            status['drop_subscription'] = True
+        elif code == 413:
+            status['error'] = 'Payload exceeds size limit'
+        elif code == 500:
+            status['error'] = 'Internal Server Error'
+            status['backoff_seconds'] = 60
         elif code == 503:
             status['error'] = 'Service Unavailable - try again later'
             status['backoff_seconds'] = 60
