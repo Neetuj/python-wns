@@ -145,7 +145,7 @@ class WNSBase(object):
             'status': response.headers.get('X-WNS-Status', '')
         }
 
-        code = response.code
+        code = response.status_code
         status['http_status_code'] = code
 
         if code == 200:
