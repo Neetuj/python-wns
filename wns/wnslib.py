@@ -63,7 +63,8 @@ class WNSClient():
         wnstype = wnsparams.get('type', 'toast')
 
         # Check if we need to get an initial or new token
-        if not self.accesstoken or self.tokenexpiry >= int(time.time()):
+        now = int(time.time())
+        if not self.accesstoken or now >= self.tokenexpiry:
             self.request_token()
 
         if wnstype == 'toast':
