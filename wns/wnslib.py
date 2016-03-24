@@ -26,12 +26,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import eventlet
-requests = eventlet.import_patched('requests.__init__')
-import requests
 import time
 import xml.etree.ElementTree as ET
 from cStringIO import StringIO
+import eventlet
+requests = eventlet.import_patched('requests.__init__')
+import requests  # NOQA
+
 try:
     register_namespace = ET.register_namespace
 except AttributeError:
@@ -39,7 +40,8 @@ except AttributeError:
         ET._namespace_map[uri] = prefix
 
 
-class WNSException(Exception): pass
+class WNSException(Exception):
+    pass
 
 
 class WNSInvalidPushTypeException(WNSException):
@@ -71,7 +73,7 @@ class WNSClient():
 
         if wnstype == 'toast':
             wnsparams.setdefault('template', 'ToastText01')
-            wns  = WNSToast(accesstoken=accesstoken)
+            wns = WNSToast(accesstoken=accesstoken)
         elif wnstype == 'tile':
             wnsparams.setdefault('template', 'TileSquare150x150Text01')
             wns = WNSTile(accesstoken=accesstoken)
@@ -80,7 +82,7 @@ class WNSClient():
             wns = WNSBadge(accesstoken=accesstoken)
         elif wnstype == 'raw':
             wnsparams.setdefault('raw', 'raw notification')
-            wns  = WNSRaw(accesstoken=accesstoken)
+            wns = WNSRaw(accesstoken=accesstoken)
         else:
             raise WNSInvalidPushTypeException(wnstype)
         result = wns.send(url, wnsparams)
@@ -229,6 +231,7 @@ class WNSToast(WNSBase):
                 count += 1
         return self.serialize_tree(ET.ElementTree(root))
 
+
 class WNSRaw(WNSBase):
     HEADER_CONTENT_TYPE = 'Content-Type'
     HEADER_X_NOTIFICATION = "X-NotificationClass"
@@ -245,6 +248,7 @@ class WNSRaw(WNSBase):
 
     def prepare_payload(self, payload):
         return payload['raw']
+
 
 class WNSTile(WNSBase):
     def __init__(self, *args, **kwargs):
