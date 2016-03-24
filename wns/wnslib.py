@@ -31,7 +31,6 @@ import xml.etree.ElementTree as ET
 from cStringIO import StringIO
 import eventlet
 requests = eventlet.import_patched('requests.__init__')
-import requests  # NOQA
 
 try:
     register_namespace = ET.register_namespace
