@@ -184,10 +184,6 @@ class WNSBase(object):
 
         return status
 
-    def handle_response(self, response):
-        result = self.parse_response(response)
-        result['response'] = {'status': response.code, 'headers': dict(response.headers), 'text': response.body}
-
     def send(self, uri, payload):
         """
         Send push message. Input parameters:
