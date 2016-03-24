@@ -83,8 +83,8 @@ class WNSClient():
             wns = WNSRaw(accesstoken=self.accesstoken)
         else:
             raise WNSInvalidPushTypeException(wnstype)
-        result = wns.send(url, wnsparams)
-        return result
+
+        return wns.send(url, wnsparams)
 
     def request_token(self):
         payload = {'grant_type': 'client_credentials',
@@ -199,7 +199,7 @@ class WNSBase(object):
         """
         data = self.prepare_payload(payload)
         response = requests.post(uri, headers=self.headers, data=data)
-        return response
+        return self.parse_response(response)
 
 
 class WNSToast(WNSBase):
