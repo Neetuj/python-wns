@@ -51,37 +51,36 @@ WNSACCESSTOKEN_URL = 'https://login.live.com/accesstoken.srf'
 
 
 class WNSClient():
-    def __init__(self, app):
-        self.app = app
-        self.clientid = app['wnsclientid']
-        self.clientsecret = app['wnsclientsecret']
-        self.accesstoken = ""
-        self.tokentype = ""
-        self.expiry = ""
+    def __init__(self, params):
+        self.clientid = params['wnsclientid']
+        self.clientsecret = params['wnsclientsecret']
+        self.tokenexpiry = None
+        self.accesstoken = None
 
     def process(self, **kwargs):
         url = kwargs['token']
         wnsparams = kwargs['message']
         wnstype = wnsparams.get('type', 'toast')
 
-        self.accesstoken = self.request_token()
-        accesstoken = self.accesstoken
+        # Check if we need to get an initial or new token
+        if not self.accesstoken or self.tokenexpiry >= int(time.time()):
+            self.request_token()
 
         if wnstype not in ['toast', 'tile', 'badge', 'raw']:
             raise WNSInvalidPushTypeException(wnstype)
 
         if wnstype == 'toast':
             wnsparams.setdefault('template', 'ToastText01')
-            wns = WNSToast(accesstoken=accesstoken)
+            wns = WNSToast(accesstoken=self.accesstoken)
         elif wnstype == 'tile':
             wnsparams.setdefault('template', 'TileSquare150x150Text01')
-            wns = WNSTile(accesstoken=accesstoken)
+            wns = WNSTile(accesstoken=self.accesstoken)
         elif wnstype == 'badge':
             wnsparams.setdefault('badge', {'value': None})
-            wns = WNSBadge(accesstoken=accesstoken)
+            wns = WNSBadge(accesstoken=self.accesstoken)
         elif wnstype == 'raw':
             wnsparams.setdefault('raw', 'raw notification')
-            wns = WNSRaw(accesstoken=accesstoken)
+            wns = WNSRaw(accesstoken=self.accesstoken)
         else:
             raise WNSInvalidPushTypeException(wnstype)
         result = wns.send(url, wnsparams)
@@ -93,13 +92,14 @@ class WNSClient():
                    'client_secret': self.clientsecret,
                    'scope': 'notify.windows.com'}
         response = requests.post(WNSACCESSTOKEN_URL, data=payload)
+
         if response.status_code != 200:
             raise WNSException(response._content)
+
         responsedata = response.json()
-        accesstoken = responsedata['access_token']
-        self.app['wnsaccesstoken'] = accesstoken
-        self.app['wnstokenexpiry'] = int(responsedata['expires_in']) + int(time.time())
-        return accesstoken
+
+        self.accesstoken = responsedata['access_token']
+        self.tokenexpiry = int(responsedata['expires_in']) + int(time.time())
 
 
 class WNSBase(object):
