@@ -66,9 +66,6 @@ class WNSClient():
         if not self.accesstoken or self.tokenexpiry >= int(time.time()):
             self.request_token()
 
-        if wnstype not in ['toast', 'tile', 'badge', 'raw']:
-            raise WNSInvalidPushTypeException(wnstype)
-
         if wnstype == 'toast':
             wnsparams.setdefault('template', 'ToastText01')
             wns = WNSToast(accesstoken=self.accesstoken)
