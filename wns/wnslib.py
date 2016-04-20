@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -28,7 +29,10 @@
 
 import time
 import xml.etree.ElementTree as ET
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 import eventlet
 requests = eventlet.import_patched('requests.__init__')
 
