@@ -72,7 +72,7 @@ class WNSClient():
             self.request_token()
 
         if wnstype == 'toast':
-            wnsparams.setdefault('template', 'ToastText01')
+            wnsparams.setdefault('template', 'ToastText02')
             wns = WNSToast(accesstoken=self.accesstoken)
         elif wnstype == 'tile':
             wnsparams.setdefault('template', 'TileSquare150x150Text01')
