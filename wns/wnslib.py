@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -28,7 +29,10 @@
 
 import time
 import xml.etree.ElementTree as ET
-from cStringIO import StringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 import eventlet
 requests = eventlet.import_patched('requests.__init__')
 
@@ -68,7 +72,7 @@ class WNSClient():
             self.request_token()
 
         if wnstype == 'toast':
-            wnsparams.setdefault('template', 'ToastText01')
+            wnsparams.setdefault('template', 'ToastText02')
             wns = WNSToast(accesstoken=self.accesstoken)
         elif wnstype == 'tile':
             wnsparams.setdefault('template', 'TileSquare150x150Text01')
@@ -117,9 +121,11 @@ class WNSBase(object):
         self.headers[self.HEADER_WNS_TYPE] = "wns/%s" % target
 
     def serialize_tree(self, tree):
+        from io import BytesIO
+
         file = StringIO()
         tree.write(file, encoding='utf-8')
-        contents = "<?xml version='1.0' encoding='utf-8'?>" + file.getvalue()
+        contents = file.getvalue()
         file.close()
         return contents
 
