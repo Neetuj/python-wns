@@ -58,6 +58,7 @@ class WNSClient():
     def __init__(self, params):
         self.clientid = params['wnsclientid']
         self.clientsecret = params['wnsclientsecret']
+        self.timeout = params['timeout'] if 'timeout' in params else None
         self.tokenexpiry = None
         self.accesstoken = None
 
@@ -73,16 +74,16 @@ class WNSClient():
 
         if wnstype == 'toast':
             wnsparams.setdefault('template', 'ToastText02')
-            wns = WNSToast(accesstoken=self.accesstoken)
+            wns = WNSToast(accesstoken=self.accesstoken, timeout=self.timeout)
         elif wnstype == 'tile':
             wnsparams.setdefault('template', 'TileSquare150x150Text01')
-            wns = WNSTile(accesstoken=self.accesstoken)
+            wns = WNSTile(accesstoken=self.accesstoken, timeout=self.timeout)
         elif wnstype == 'badge':
             wnsparams.setdefault('badge', {'value': None})
-            wns = WNSBadge(accesstoken=self.accesstoken)
+            wns = WNSBadge(accesstoken=self.accesstoken, timeout=self.timeout)
         elif wnstype == 'raw':
             wnsparams.setdefault('raw', 'raw notification')
-            wns = WNSRaw(accesstoken=self.accesstoken)
+            wns = WNSRaw(accesstoken=self.accesstoken, timeout=self.timeout)
         else:
             raise WNSInvalidPushTypeException(wnstype)
 
@@ -93,7 +94,7 @@ class WNSClient():
                    'client_id': self.clientid,
                    'client_secret': self.clientsecret,
                    'scope': 'notify.windows.com'}
-        response = requests.post(WNSACCESSTOKEN_URL, data=payload)
+        response = requests.post(WNSACCESSTOKEN_URL, data=payload, timeout=self.timeout)
 
         if response.status_code != 200:
             raise WNSException(response._content)
@@ -109,8 +110,9 @@ class WNSBase(object):
     HEADER_WNS_TYPE = 'X-WNS-Type'
     HEADER_WNS_REQUESTFORSTATUS = 'X-WNS-RequestForStatus'
 
-    def __init__(self, accesstoken=None):
+    def __init__(self, accesstoken=None, timeout=None):
         self.accesstoken = accesstoken
+        self.timeout = timeout
         self.headers = {
             'Content-Type': 'text/xml',
             'Content-Length': len(self.accesstoken),
@@ -198,7 +200,7 @@ class WNSBase(object):
 
         """
         data = self.prepare_payload(payload)
-        response = requests.post(uri, headers=self.headers, data=data)
+        response = requests.post(uri, headers=self.headers, data=data, timeout=self.timeout)
         return self.parse_response(response)
 
 
