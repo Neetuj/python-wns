@@ -115,7 +115,7 @@ class WNSBase(object):
         self.timeout = timeout
         self.headers = {
             'Content-Type': 'text/xml',
-            'Content-Length': len(self.accesstoken),
+            'Content-Length': str(len(self.accesstoken)),
             'Authorization': 'Bearer %s' % self.accesstoken,
         }
 
